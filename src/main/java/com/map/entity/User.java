@@ -1,9 +1,6 @@
 package com.map.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
 import com.baomidou.mybatisplus.extension.activerecord.Model;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -41,7 +38,8 @@ public class User extends Model<User> {
     //姓名
     @TableField("name")//配置数据库字段
     private String name;
-    //年龄
+    //年龄,忽略null值和空字符串
+    @TableField(strategy = FieldStrategy.NOT_EMPTY)
     private Integer age;
     //邮箱
     private String email;
