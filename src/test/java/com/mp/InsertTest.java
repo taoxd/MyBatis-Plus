@@ -29,9 +29,9 @@ public class InsertTest {
          * 如果自己没有配置主键策略，MP的默认主键策略是基于雪花算法的自增主键
          */
         User user = new User();
-        user.setName("向前");
-        user.setAge(25);
-        user.setEmail("25656@qq.com");
+        user.setName("向后");
+        user.setAge(28);
+        //user.setEmail("25656@qq.com");
         user.setManagerId(1088248166370832385L);
         user.setCreateTime(LocalDateTime.now());
         user.setRemark("我是一个备注");

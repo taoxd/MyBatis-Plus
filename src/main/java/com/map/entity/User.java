@@ -1,9 +1,12 @@
 package com.map.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.extension.activerecord.Model;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 
@@ -15,9 +18,25 @@ import java.time.LocalDateTime;
  */
 @Data
 @TableName("user")//设置数据库表名
-public class User {
-    //主键
-    @TableId("id")//配置数据库主键
+@EqualsAndHashCode(callSuper = false)
+public class User extends Model<User> {
+
+    private static final long serialVersionUID = 1L;
+    /**
+     * 主键
+     *
+     * 局部策略>全局策略
+     *
+     * IdType.AUTO数据库ID自增策略
+     * IdType.NONE默认策略，跟随全局，无id默认雪花算法，有id就直接用
+     * IdType.INPUT用户输入ID
+     *
+     * 以下3种类型，只有当插入对象ID为空，才自动填充
+     * IdType.ID_WORKER，雪花算法
+     * IdType.ID_WORKER_STR，雪花算法字符串
+     * IdType.UUID，全局唯一ID
+     */
+    @TableId(value = "id",type = IdType.NONE)//配置数据库主键
     private Long id;
     //姓名
     @TableField("name")//配置数据库字段
