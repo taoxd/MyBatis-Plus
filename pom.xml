@@ -46,4 +46,15 @@
             <artifactId>mysql-connector-java</artifactId>
         </dependency>
     </dependencies>
+    <build>
+        <resources>
+            <!--xml文件在src/main/java包中，需配置才能找到，否则放到resources包中不需要配置-->
+            <resource>
+                <directory>src/main/java</directory>
+                <includes>
+                    <include>**/*.xml</include>
+                </includes>
+            </resource>
+        </resources>
+    </build>
 </project>

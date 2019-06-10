@@ -1,6 +1,11 @@
 package com.mp;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.additional.query.impl.LambdaQueryChainWrapper;
 import com.map.Application;
 import com.map.dao.UserMapper;
 import com.map.entity.User;
@@ -245,5 +250,215 @@ public class RetrieveTest {
         List<User> userList = userMapper.selectList(queryWrapper);
         userList.forEach(System.out::println);
 
+    }
+
+    /**
+     * 实体作为条件构造参数
+     * <p>
+     * SELECT id,name,age,email,manager_id,create_time FROM user WHERE name=? AND age=? AND name LIKE ? AND age < ?
+     * <p>
+     * 实体传参默认WHERE name=? AND age=?
+     * <p>
+     * 如想不用等于，可以设置实体类注解属性
+     *
+     * @TableField(value = "name",condition = SqlCondition.LIKE)//配置数据库字段
+     * private String name;
+     */
+    @Test
+    public void selectByWrapperSuperEntity() {
+        User whereUser = new User();
+        whereUser.setName("刘红雨");
+        whereUser.setAge(32);
+
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>(whereUser);
+        queryWrapper.like("name", "雨").lt("age", 40);
+
+        List<User> userList = userMapper.selectList(queryWrapper);
+        userList.forEach(System.out::println);
+    }
+
+    /**
+     * AllEq用法
+     */
+    @Test
+    public void selectByWrapperSuperAllEq() {
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        Map<String, Object> params = new HashMap<>();
+        params.put("name", "王天风");
+        params.put("age", null);
+        //默认null加入到where中，WHERE name = ? AND age IS NULL
+        //queryWrapper.allEq(params);
+
+        //设置false，null值不加入，WHERE name = ?
+        //queryWrapper.allEq(params,false);
+
+        //过滤name字段，WHERE age IS NULL，当然也可以设置属性
+        queryWrapper.allEq((k, v) -> !k.equals("name"), params);
+
+        List<User> userList = userMapper.selectList(queryWrapper);
+        userList.forEach(System.out::println);
+    }
+
+    /**
+     * 返回实体类时，null会返回
+     * map返回没有null
+     */
+    @Test
+    public void selectByWrapperMaps() {
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.like("name", "雨").lt("age", 40);
+
+        List<Map<String, Object>> userList = userMapper.selectMaps(queryWrapper);
+        userList.forEach(System.out::println);
+    }
+
+    /**
+     * 按照直属上级分组，查询每组的平均年龄、最大年龄、最小年龄。
+     * 并且只取年龄总和小于500的组
+     * select avg(age) avg_age,min(age) min_age,max(age) max_age
+     * from user
+     * group by manager_id
+     * having sum(age) <500
+     */
+    @Test
+    public void selectByWrapperMaps2() {
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.select("avg(age) avg_age", "min(age) min_age", "max(age) max_age")
+                .groupBy("manager_id").having("sum(age) <{0}", 500);
+
+        List<Map<String, Object>> userList = userMapper.selectMaps(queryWrapper);
+        userList.forEach(System.out::println);
+    }
+
+    /**
+     * 只返回第一列
+     */
+    @Test
+    public void selectByWrapperObjs() {
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.like("name", "雨").lt("age", 40);
+
+        List<Object> userList = userMapper.selectObjs(queryWrapper);
+        userList.forEach(System.out::println);
+    }
+
+    /**
+     * 查询记录数
+     */
+    @Test
+    public void selectByWrapperCount() {
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.like("name", "雨").lt("age", 40);
+
+        Integer count = userMapper.selectCount(queryWrapper);
+        System.out.println("总记录数: " + count);
+    }
+
+    /**
+     * 只查询一条
+     * 返回多条会报错
+     */
+    @Test
+    public void selectByWrapperOne() {
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.like("name", "刘红雨").lt("age", 40);
+
+        User user = userMapper.selectOne(queryWrapper);
+        System.out.println(user);
+    }
+
+    /**
+     * lambda条件构造器
+     * 防止误写，name可能会写错
+     * queryWrapper.like("name", "刘红雨").lt("age", 40);
+     */
+    @Test
+    public void selectLambda() {
+        //三种创建方式
+        LambdaQueryWrapper<User> lambda = new QueryWrapper<User>().lambda();
+        LambdaQueryWrapper<User> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        LambdaQueryWrapper<User> lambdaQuery = Wrappers.<User>lambdaQuery();
+        //where name like '%雨%' and age < 40
+        lambdaQuery.like(User::getName, "雨").lt(User::getAge, 40);
+
+        List<User> userList = userMapper.selectList(lambdaQuery);
+        userList.forEach(System.out::println);
+    }
+
+    /**
+     * 5.名字为王姓并且(年龄小于40或邮箱不为空)
+     * name like '王%' and (age < 40 or email is not null)
+     */
+    @Test
+    public void selectLambda2() {
+        //三种创建方式
+        LambdaQueryWrapper<User> lambda = new QueryWrapper<User>().lambda();
+        LambdaQueryWrapper<User> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        LambdaQueryWrapper<User> lambdaQuery = Wrappers.<User>lambdaQuery();
+        lambdaQuery.likeRight(User::getName, "王")
+                .and(lqw -> lqw.lt(User::getAge, 40).or().isNotNull(User::getEmail));
+
+        List<User> userList = userMapper.selectList(lambdaQuery);
+        userList.forEach(System.out::println);
+    }
+
+    @Test
+    public void selectLambda3() {
+        List<User> userList = new LambdaQueryChainWrapper<User>(userMapper)
+                .like(User::getName, "雨").ge(User::getAge, 20).list();
+        userList.forEach(System.out::println);
+    }
+
+    /**
+     * select * from user WHERE name LIKE ? AND ( age < ? OR email IS NOT NULL )
+     */
+    @Test
+    public void selectMy() {
+        LambdaQueryWrapper<User> lambdaQuery = Wrappers.<User>lambdaQuery();
+        lambdaQuery.likeRight(User::getName, "王")
+                .and(lqw -> lqw.lt(User::getAge, 40).or().isNotNull(User::getEmail));
+
+        List<User> userList = userMapper.selectAll(lambdaQuery);
+        userList.forEach(System.out::println);
+    }
+
+    @Test
+    public void selectPage() {
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.ge("age", 26);
+
+        //默认查询记录数
+        //Page<User> page = new Page<>(1, 2);
+        //不查询记录数
+        Page<User> page = new Page<>(1, 2, false);
+
+        //IPage<User> iPage = userMapper.selectPage(page, queryWrapper);
+        IPage<Map<String, Object>> iPage = userMapper.selectMapsPage(page, queryWrapper);
+
+        System.out.println("总页数: " + iPage.getPages());
+        System.out.println("总记录数: " + iPage.getTotal());
+
+        //List<User> userList = iPage.getRecords();
+        List<Map<String, Object>> userList = iPage.getRecords();
+
+        userList.forEach(System.out::println);
+
+    }
+
+    @Test
+    public void selectMyPage() {
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.ge("age", 26);
+
+        Page<User> page = new Page<>(1, 2);
+
+        IPage<User> iPage = userMapper.selectUserPage(page, queryWrapper);
+
+        System.out.println("总页数: " + iPage.getPages());
+        System.out.println("总记录数: " + iPage.getTotal());
+
+        List<User> userList = iPage.getRecords();
+
+        userList.forEach(System.out::println);
     }
 }

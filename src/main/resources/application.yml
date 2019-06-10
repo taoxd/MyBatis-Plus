@@ -14,7 +14,10 @@ logging:
     console: '%p%m%n'
 
 
-#只有配置此项才能在控制台打印sql语句
 mybatis-plus:
+  #xml扫描路径
+  mapper-locations: classpath:com/map/mapper/**/*.xml
   configuration:
+    #只有配置此项才能在控制台打印sql语句
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
