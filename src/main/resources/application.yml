@@ -28,7 +28,7 @@ mybatis-plus:
   global-config:
     db-config:
       #配置全局主键生成策略
-      id-type: uuid
+      #id-type: uuid
 
       #默认not_null，insert语句null值不展示，update语句会设置为null
       #ignored,null值也会出现在sql中，update语句会设置为null
